@@ -1,0 +1,273 @@
+{% extends "auctions/layout.html" %}
+{% load mathfilter %}
+{% block body %}
+<div class="row border-top border-bottom pt-4 pb-5 my-3">
+
+    <div class="col-md-6 my-4 ">
+        <div class="img_holder sticky_obj ">
+            <img src="{{ Listing.img.url }}" class="img-fluid mx-auto d-block">
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <h4 class="font-weight-bold mb-1 text-uppercase">{{Listing.name}}</h4>
+        <p><a href="{% url 'categories' %}?category={{Listing.category}}" class="badge badge-pill badge-warning ">{{Listing.category}}</a></p>
+        {% if Listing.is_active %}
+            {% if Listing.max_bid %}
+            <h2 class="font-weight-bold ">${{Listing.max_bid|stringformat:".2f"}}<span class="badge badge-light border small ml-1 p-1">Current Bid</span></h2> 
+            {% else %}
+            <h2 class="font-weight-bold">${{Listing.price|stringformat:".2f"}}</h2>
+            {% endif %}
+
+            {% if Listing.watchers_count %}
+            <span class="badge badge-danger"><i class="fa fa-eye pr-2"></i>Watchers {{ Listing.watchers_count }}</span>
+            {% endif %}
+            {% if Listing.bids_count %}
+            <span class="badge badge-primary">Bids {{ Listing.bids_count }}</span>
+            {% endif %}
+            {% if Listing.bidders_count %}
+            <span class="badge badge-info">Bidders {{ Listing.bidders_count }}</span>
+            {% endif %}
+            <!-- Bid History button -->
+            {% if all_Bids %}
+            <button type="button" class="btn btn-outline-primary history px-1" data-toggle="modal" data-target="#bidHistory">
+                View Bid History <i class="fa fa-arrow-circle-right"></i>
+            </button>
+            {% endif%}
+
+            <!-- if user is the owner -->
+            {% ifequal user Listing.user_id %}
+            <p class="text-muted mb-4">You Listed this on {{ Listing.created_on }}</p>
+
+                <div class="row border-bottom pb-5">
+                    <div class="col-lg-8">
+                        <button class="btn btn-danger btn-block" type="button" data-toggle="modal" data-target="#closeListing">Close Listing</button>
+                    </div>
+                </div>
+                
+            <!-- if user is not the owner -->
+            {% else %}
+                <p class="text-muted mb-3">Listed on {{ Listing.created_on }} By {{Listing.user_id}}</p>
+                <div class="border-bottom pb-3 ">
+                    <form action="{% url 'place_bid' Listing.id %}" method="POST">
+                        {% csrf_token %}
+                        <div class="form-group row">
+                            <div class="col-lg-8">
+                                {% for Bid in all_Bids %}
+                                {% ifequal Bid.user_id user %}
+
+                                    {% ifequal Bid.bid Listing.max_bid %}    
+                                        <span class="badge badge-success mb-1"> Your bid of ${{Bid.bid|stringformat:".2f"}} placed on {{ Bid.created_on }} is the current Bid.</span>
+                                        <!-- <span class="badge badge-light mb-2">You  a bid </span> -->
+                                    
+                                        {% else %}
+                                            {% ifequal Bid.bid user_maxBid %}    
+                                                <span class="badge badge-danger">You are no longer the highest bidder</span>
+                                                <!-- <span class="badge badge-success"> Your bid of ${{Bid.bid|stringformat:".2f"}} is the current Bid.</span> -->
+                                                <span class="badge badge-light border mb-1">Your last bid of ${{Bid.bid|stringformat:".2f"}} was placed on {{ Bid.created_on }}</span>
+                                            {% endifequal %}
+                                    {% endifequal %}
+
+                                {% endifequal %}
+                                {%  endfor %}
+
+                                {% if userBids_count > 1 %}
+                                    <span class="badge badge-info mb-2">You have made {{ userBids_count }} bids so far</span>
+                                {% endif %}
+
+                                <div class="input-group mb-2 ">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">$</span>
+                                    </div>
+
+                                    {% if Listing.max_bid %}
+                                    <input class="form-control" type="number" name="bid" min="{{ Listing.max_bid }}" required>
+                                    {% else %}
+                                    <input class="form-control" type="number" name="bid" min="{{ Listing.price }}" required>
+                                    {% endif %}
+                                </div>
+                                <button class=" btn btn-outline-info btn-block" type="submit">Place Your Bid</button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                        <div class="form-group row">
+                            <div class="col-lg-8">
+                                {% if in_WatchList %}
+                                <a class="btn btn-danger btn-block" href="{% url 'add_watch_list' Listing.id %}"><i class="fa fa-eye-slash pr-2"></i>Remove from Watchlist</a>
+                                {% else %}
+                                <a class="btn btn-success btn-block" href="{% url 'add_watch_list' Listing.id %}"><i class="fa fa-eye pr-2"></i>Add to Watchlist</a>
+                                {% endif %}
+                            </div>
+                        </div>  
+                </div>
+            {% endifequal %}  
+
+    <!-- if listing not active -->
+        {% else %}    
+        
+        {% if Listing.max_bid %}
+        <h3 class="font-weight-bold">${{Listing.max_bid|stringformat:".2f"}}<span class="badge badge-light border small ml-1 p-1">Highest Bid</span></h3> 
+        {% else %}
+        <h3 class="font-weight-bold">${{Listing.price|stringformat:".2f"}}</h3>
+        {% endif %}
+        {% if all_Bids %}
+        <span class="badge badge-info">{{ Listing.bidders_count }} Bidders made {{ Listing.bids_count }} Bids</span>
+            <button type="button" class="btn btn-outline-primary history px-1" data-toggle="modal" data-target="#bidHistory">
+                View Bid History <i class="fa fa-arrow-circle-right"></i>
+            </button>
+        {% endif%}
+
+        {% ifequal user Listing.user_id %}
+            <p class="text-muted mb-4">You had Listed this on {{ Listing.created_on }}</p>
+        {% else %}
+        <p class="text-muted mb-3">Was Listed on {{ Listing.created_on }} By {{Listing.user_id}}</p>
+        {% endifequal %}
+
+        
+        <div class="border-bottom mr-2 pb-4">
+            <div class="col-md-8 p-0">
+                <div class="alert alert-danger text-center p-1 mb-1" role="alert">
+                    <p class="font-weight-bold m-0">Listing Ended</p>
+                </div>    
+                    {% if Listing.max_bid %}
+                        {% ifequal user.username Listing.sold_to %}
+                        <span class="badge badge-success">You have won the Listing for ${{Listing.max_bid|stringformat:".2f"}} on {{Listing.sold_on}}</span>
+                        {% else %}
+                        <span class="badge badge-light border">Item was sold to {{Listing.sold_to}} for ${{Listing.max_bid|stringformat:".2f"}} on {{Listing.sold_on}}</span>
+                            {% ifequal user Listing.user_id %}
+                            <span class="badge badge-success">You made a profit of ${{Listing.max_bid|subtract:Listing.price}}</span>
+                            {% endifequal %}
+                        {% endifequal %}
+                    {% else %}
+                        <span class="badge badge-light border">Listing Ended on {{Listing.sold_on}}</span>
+                        <!-- <span class="badge badge-success">You made a profit of ${{Listing.max_bid|subtract:Listing.price}} </span> -->
+                    {% endif %}
+            </div>
+            {% if userBids_count > 1 %}
+                    <span class="badge badge-info mb-2">You made {{ userBids_count }} bids on the Listing</span>
+                {% endif %}
+        </div> 
+        {% endif %}
+                <p class="text-muted pt-3">
+                    {{Listing.description}}
+                </p> 
+            
+        </div>
+    </div>
+
+<div class="row my-4">
+    <div class="col-md-6">
+            <h3 class="font-weight-bold text-uppercase mt-4 ">Comments</h3>
+            <p class="text-muted border-bottom pb-3">Total Comments: {{Comments.count}}</p>
+            {% for Comment in Comments %}
+                <div class="card mb-3 p-3 shadow-sm">
+                    <h5 class="font-weight-bold text-uppercase">{{Comment.comment_title}}</h5>
+                    <p class="text-muted">{{Comment.user_id}} on {{Comment.created_on}}</p>
+                	<p class="m-0">{{Comment.comment}}</p>
+                </div>
+            {% endfor %}
+        
+    </div>
+    {%if Listing.is_active %}
+        {% ifequal user Listing.user_id %}
+        {% else %}
+            <div class="col-md-6">
+                <div class="card p-4 mr-5 shadow">
+                    <h5 class="card-title font-weight-bold">WRITE A COMMENT</h5>
+                    <form action="{% url 'add_comment' Listing.id %}" method="POST">
+                        {% csrf_token %}
+                        {{commentForm.as_p}}
+                        <input class="btn btn-info btn-block mt-3" type="submit" value="Submit">
+                    </form>
+                </div>
+            </div>
+        {% endifequal %}
+    {% endif %}
+</div>
+
+<!-- Close Listing Confirmation Modal -->
+<div class="modal fade" id="closeListing" data-backdrop="static" data-keyboard="false" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Are You Sure?</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            {% if Listing.max_bid %}
+                {% for Bid in all_Bids %}
+                    {% ifequal Bid.bid Listing.max_bid %}
+                    <p><strong> The item will be sold for ${{Listing.max_bid|stringformat:".2f"}} to the highest Bidder {{Bid.user_id}}.</strong></p>
+                    <p>And The Listing will no longer be Active to place bids on.</p>
+                    {% endifequal %}
+                {%  endfor %}
+            {% else %}
+                <p>No bids were made on the Listing.</p>
+                <p>If you close it now, Listing will no longer be Active to place bids on.</p>
+            {% endif %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <a class="btn btn-danger" href="{% url 'close_listing' Listing.id %}">Yes I'm Sure</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Bid History modal -->
+  <div class="modal fade" id="bidHistory" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h5 class="modal-title">Bid History</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Bidder</th>
+                        <th scope="col">Bid Amount</th>
+                        <th scope="col">Bid Time</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for Bid in all_Bids reversed %}
+                    {% ifequal Bid.bid Listing.max_bid %}    
+                    <tr class="table-primary">
+                        <td><strong>{{Bid.user_id}}</strong></td>
+                        <td><strong>${{Bid.bid|stringformat:".2f"}}</strong></td>
+                        <td><strong>{{Bid.created_on}}</strong></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td>{{Bid.user_id}}</td>
+                        <td>${{Bid.bid|stringformat:".2f"}}</td>
+                        <td>{{Bid.created_on}}</td>
+                    </tr>
+                    {% endifequal %}
+                    {% endfor %}
+                    <tr>
+                        <td></td>
+                        <td colspan="2" class="text-muted">${{Listing.price|stringformat:".2f"}} Initial Price </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <!-- <a class="btn btn-danger" href="{% url 'close_listing' Listing.id %}">Yes I'm Sure</a> -->
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

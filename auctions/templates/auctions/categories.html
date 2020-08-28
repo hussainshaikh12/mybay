@@ -1,0 +1,98 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+<div class="row">
+    <div class="col-md-3 m-0 p-0">
+        <div class="card shadow-sm pl-3 pb-3 sticky_obj">
+            <h3 class="card-title mt-4 border-bottom mr-3 pb-2">Categories</h3>
+            <form action="{% url 'categories' %}" method="GET">
+                <!-- {% csrf_token %} -->
+                {% if cat_selected %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="category" id="all" value="all" onchange="this.form.submit()">
+                        <label class="form-check-label" for="all">
+                            All Categories
+                        </label>
+                    </div>
+                    {% for Category in Categories %}
+                        {% if Category.category %}
+                            {% ifequal Category.category cat_selected %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="category" id="{{ Category.category }}" value="{{ Category.category }}" onchange="this.form.submit()" checked>
+                                    <label class="form-check-label" for="{{ Category.category }}">
+                                        {{ Category.category }}
+                                    </label>
+                                </div>
+                            {% else %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="category" id="{{ Category.category }}" value="{{ Category.category }}" onchange="this.form.submit()">
+                                    <label class="form-check-label" for="{{ Category.category }}">
+                                        {{ Category.category }}
+                                    </label>
+                                </div>
+                            {% endifequal %}
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="category" id="all" value="all" onchange="this.form.submit()" checked>
+                        <label class="form-check-label" for="all">
+                            All Categories
+                        </label>
+                    </div>
+                    {% for Category in Categories %}
+                        {% if Category.category %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="category" id="{{ Category.category }}" value="{{ Category.category }}" onchange="this.form.submit()">
+                                <label class="form-check-label" for="{{ Category.category }}">
+                                    {{ Category.category }}
+                                </label>
+                            </div>
+                        {% endif %}
+                {% endfor %}
+
+                {% endif %}
+            </form>
+        </div>
+    </div>
+        
+    
+        <div class="col-md-9 ">
+            {% for Listing in Listings %}
+                <div class="row mx-auto shadow p-4 mb-3 bg-white rounded">
+
+                    
+                    <div class="col-md-4 img_holder_small px-0">
+                        <img src="{{ Listing.img.url }}" class="img-fluid mx-auto d-block">
+                    </div>
+                   
+                
+                    <div class="col-md-5 ">
+                        <h5 class="card-title mb-1">{{Listing.name}}</h5>
+                        <p><a href="{% url 'categories' %}?category={{Listing.category}}" class="badge badge-pill badge-warning mb-0">{{Listing.category}}</a></p>
+                        <p class="card-text mb-1">{{Listing.description | truncatewords:15}}</p>
+                        <p class="card-text text-muted">Listed on {{ Listing.created_on }} By {{ Listing.user_id }}</p>
+                        <a class="btn btn-info" href="{% url 'listing' Listing.id %}">View Details<i class="fa fa-arrow-circle-right ml-2"></i></a>
+                    </div>
+                    <div class="col-md-3 text-md-right px-0">
+                        {% if Listing.max_bid %}
+                            <h3 class="font-weight-bold">${{ Listing.max_bid|stringformat:".2f" }}</h3> 
+                        {% else %}
+                            <h3 class="font-weight-bold">${{ Listing.price|stringformat:".2f" }}</h3>
+                        {% endif %}
+                        {% if Listing.watchers_count %}
+                        <span class="badge badge-danger"><i class="fa fa-eye pr-2"></i>Watchers {{ Listing.watchers_count }}</span><br>
+                        {% endif %}
+                        {% if Listing.bids_count %}
+                        <span class="badge badge-primary">Bids {{ Listing.bids_count }}</span><br>
+                        {% endif %}
+                        {% if Listing.bidders_count %}
+                        <span class="badge badge-info">Bidders {{ Listing.bidders_count }}</span><br>
+                        {% endif %}
+                    </div>
+
+
+                </div>
+            {% endfor %}
+</div>
+{% endblock %}

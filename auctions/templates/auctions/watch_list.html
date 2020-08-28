@@ -1,0 +1,78 @@
+{% extends "auctions/layout.html" %}
+{% load static %}
+{% block body %}
+{% if watch_list %}
+    {% for Listing in watch_list %}
+        <div class="row">
+
+            <div class="col-md-8 mx-auto shadow p-3 mb-3 bg-white rounded">
+                <div class="row">
+                    <div class="col-md-4 my-auto">
+                        <img src="{{ Listing.al_id.img.url }}" class="img-fluid">
+                    </div>
+                
+                    <div class="col-md-5 my-auto">
+                        <h5 class="font-weight-bold mb-1">{{Listing.al_id.name}}</h5>
+                        <p><a href="{% url 'categories' %}?category={{Listing.al_id.category}}" class="badge badge-pill badge-warning ">{{Listing.al_id.category}}</a></p>
+                        <!-- <h4 class="font-weight-bold">${{Listing.al_id.price|stringformat:".2f"}}</h4> -->
+                        {% if Listing.al_id.max_bid %}
+                            <h4 class="font-weight-bold">${{ Listing.al_id.max_bid|stringformat:".2f" }}</h4> 
+                        {% else %}
+                            <h4 class="font-weight-bold">${{ Listing.al_id.price|stringformat:".2f" }}</h4>
+                        {% endif %}
+                        {% if Listing.al_id.is_active %}
+                            <span class="badge badge-success mb-2"><i class="fa fa-check-circle mr-1"></i>Active</span><br>
+                            {% if Listing.al_id.watchers_count %}
+                                <span class="badge badge-danger"><i class="fa fa-eye pr-2"></i>Watchers {{ Listing.al_id.watchers_count }}</span>
+                            {% endif %}
+                            {% if Listing.al_id.bids_count %}
+                                <span class="badge badge-primary">Bids {{ Listing.al_id.bids_count }}</span>
+                            {% endif %}
+                            {% if Listing.al_id.bidders_count %}
+                            <span class="badge badge-info">Bidders {{ Listing.al_id.bidders_count }}</span>
+                            {% endif %}
+
+                        {% else %}
+                            <span class="badge badge-danger mb-2"><i class="fa fa-times-circle mr-1"></i>Closed</span><br>
+                            {% if Listing.al_id.max_bid %}
+                                {% ifequal user.username Listing.al_id.sold_to %}
+                                    <span class="badge badge-success">You have won the Listing for ${{Listing.al_id.max_bid|stringformat:".2f"}}</span>
+                                    {% else %}
+                                    <span class="badge badge-light border">Item was sold to {{Listing.al_id.sold_to}} for ${{Listing.al_id.max_bid|stringformat:".2f"}}</span>
+                                {% endifequal %}
+                            {% endif %}
+                            <span class="badge badge-light border">Listing ended on {{Listing.al_id.sold_on}}</span>
+                        {% endif %}
+
+                    </div>
+                    <div class="col-md-3 my-auto">
+                        <a class="btn btn-danger btn-block mb-2" href="{% url 'rem_watch_list' Listing.al_id.id %}"><i class="fa fa-eye-slash pr-2"></i>Remove</a>
+                        <a class="btn btn-info btn-block" href="{% url 'listing' Listing.al_id.id %}">View Details<i class="fa fa-angle-right view_btn"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    {% endfor %}
+
+{% else %}
+<div class="row mt-5">
+    <div class="col-sm-6 mx-auto">
+        <div class="row">
+            <div class="col-sm-2 mx-auto mb-2">
+                <img src="{% static 'auctions/img/look.png'%}" class="img-fluid">
+            </div>
+        </div>
+        <div class="row">
+            <div class="text-center mx-auto">
+                <h3>No items in WatchList</h3>
+                <a href="{% url 'index' %}" class="btn btn-primary">Continue Browsing</a>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+{% endif %}
+<!-- {{watch_list}} -->
+{% endblock %}

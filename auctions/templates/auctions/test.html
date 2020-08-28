@@ -1,0 +1,21 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+<div class="row row-cols-1 row-cols-md-4 my-4">
+    {% for Listing in Listings %}
+    <div class="col mb-3">
+      <div class="card h-100">
+        <img src="{{ Listing.img.url }}" class="card-img-top border-bottom" alt="...">
+        <div class="card-body">
+          <h5 class="card-title mb-0">{{Listing.name}}</h5>
+          <p class="badge badge-pill badge-warning ">{{Listing.category}}</p>
+          <h4 class="card-title mb-0 font-weight-bold">${{Listing.price}}</h4>
+          <p class="card-text text-muted">Listed on {{ Listing.created_on }} By {{ Listing.user_id }}</p>
+            <a class="btn btn-outline-info" href="{% url 'listing' Listing.id %}">View Details<i class="fa fa-angle-right view_btn"></i></a>
+          <!-- <p class="card-text">This is a longer card with supporting text below as a natural lead-in to additional content. This content is a little bit longer.</p> -->
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+<h2>Active Listings</h2>
+
+    {% for Listing in Listings %}
+    
+    <div class="card p-4 my-3 shadow p-3 mb-4 bg-white rounded">
+        <div class="row">
+            <div class="col-md-4 img_holder_small">
+                <img src="{{ Listing.img.url }}" class="img-fluid mx-auto d-block">
+            </div>
+            <div class="col-md-8">
+                <h5 class="card-title mb-1 font-weight-bold ">{{Listing.name}}</h5>
+                <p><a href="{% url 'categories' %}?category={{Listing.category}}" class="badge badge-pill badge-warning ">{{Listing.category}}</a></p>
+
+                {% if Listing.max_bid %}
+                    <h2 class="font-weight-bold mb-0">${{ Listing.max_bid|stringformat:".2f" }}</h2> 
+                {% else %}
+                    <h2 class="font-weight-bold mb-0">${{ Listing.price|stringformat:".2f" }}</h2>
+                {% endif %}
+
+                {% if Listing.watchers_count %}
+                <span class="badge badge-danger"><i class="fa fa-eye pr-2"></i>Watchers {{ Listing.watchers_count }}</span>
+                {% endif %}
+                {% if Listing.bids_count %}
+                <span class="badge badge-primary">Bids {{ Listing.bids_count }}</span>
+                {% endif %}
+                {% if Listing.bidders_count %}
+                <span class="badge badge-info">Bidders {{ Listing.bidders_count }}</span>
+                {% endif %}
+
+                <p class="card-text mb-1 mt-1">{{Listing.description | truncatewords:20}}</p>
+                <p class="card-text text-muted mt-2">Listed on {{ Listing.created_on }} By {{ Listing.user_id }}</p>
+                <a class="btn btn-info" href="{% url 'listing' Listing.id %}">View Details<i class="fa fa-arrow-circle-right ml-2"></i></a>
+            </div>
+        </div>
+    </div>
+
+    {% endfor %}
+
+{% endblock %}
