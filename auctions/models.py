@@ -24,6 +24,18 @@ class Auction_listing(models.Model):
     def __str__(self):
         return f"Product:{self.name} listed by {self.user_id}"
 
+    def is_user_valid(self, user):
+        return user != self.user_id
+    
+    def is_comment_valid(self,user):
+        in_Comments = Comments.objects.all().filter(user_id=user, al_id= self.id)
+        return in_Comments
+    
+    def owner(self):
+        return self.user_id
+    
+    
+
 class Bids(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE, )
     al_id  = models.ForeignKey(Auction_listing, on_delete=models.CASCADE, )
@@ -31,6 +43,8 @@ class Bids(models.Model):
     created_on  = models.DateField(auto_now_add=True, null=True, blank=True)
     def __str__(self):
         return f"{self.user_id} bid {self.bid} on {self.al_id}"
+
+   
 
 class Comments(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE, )
@@ -40,9 +54,13 @@ class Comments(models.Model):
     created_on = models.DateField(auto_now_add=True)
     def __str__(self):
         return f"{self.user_id} commented {self.comment_title} on {self.al_id}"
+    
+        
 
 class Watch_list(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user")
     al_id  = models.ForeignKey(Auction_listing, on_delete=models.CASCADE, related_name="listing")
     def __str__(self):
         return f"Product:{self.al_id} added to watchlist by {self.user_id}"
+    
+    

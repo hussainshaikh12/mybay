@@ -117,7 +117,7 @@ def create_listing(request):
 
 def listing(request, id):
     Listing = Auction_listing.objects.get(pk=id)
-    comments = Comments.objects.all().filter(al_id=Listing)
+    comments = Comments.objects.all().filter(al_id=Listing).order_by('-created_on')
     maxBid = Bids.objects.all().filter(al_id=id).aggregate(Max('bid'))
     
     # messages.error(request, bidders_count, extra_tags='success')
@@ -148,16 +148,19 @@ def listing(request, id):
 def add_watch_list(request, id):
     Listing = Auction_listing.objects.get(pk=id)
     user = User.objects.get(username=request.user.username)
-    in_WatchList = Watch_list.objects.all().filter(user_id=user, al_id=id)
-    if in_WatchList:
-        in_WatchList.delete()
-        Listing.watchers_count -= 1
-        Listing.save()
-        return HttpResponseRedirect(reverse("listing",kwargs={'id':id}))
-    WatchList = Watch_list(user_id=user, al_id=Listing)
-    WatchList.save()
-    Listing.watchers_count += 1
-    Listing.save()
+    if Listing.is_user_valid(user):
+        in_WatchList = Watch_list.objects.all().filter(user_id=user, al_id=id)
+        if in_WatchList:
+            in_WatchList.delete()
+            Listing.watchers_count -= 1
+            Listing.save()
+        else:
+            WatchList = Watch_list(user_id=user, al_id=Listing)
+            WatchList.save()
+            Listing.watchers_count += 1
+            Listing.save()
+    else:
+        messages.error(request, "You cannot add your own listing to watchlist", extra_tags='danger')
     return HttpResponseRedirect(reverse("listing",kwargs={'id':id}))
 
 @login_required(login_url="login")
@@ -169,22 +172,12 @@ def watch_list(request):
         "watch_list" : WatchList
     })
 
-@login_required(login_url="login")      
-def rem_watch_list(request, id):
-    Listing = Auction_listing.objects.get(pk=id)
-    user = User.objects.get(username=request.user.username)
-    WatchList = Watch_list.objects.all().filter(user_id=user, al_id=id)
-    WatchList.delete()
-    Listing.watchers_count -= 1
-    Listing.save()
-    return HttpResponseRedirect(reverse("watch_list"))
 
 @login_required(login_url="login")
 def place_bid(request, id):
     Listing = Auction_listing.objects.get(pk=id)
     user = User.objects.get(username=request.user.username)
-    in_Bids = Bids.objects.all().filter(user_id=user, al_id=id)
-    if request.method == "POST":
+    if Listing.is_user_valid(user) and request.method == "POST":
         bid = request.POST["bid"]
         bids = Bids(user_id=user, al_id=Listing, bid=bid)
         bids.save()
@@ -193,16 +186,16 @@ def place_bid(request, id):
         Listing.bidders_count = bidders_count
         Listing.save()
         messages.error(request, "Bid placed successfully", extra_tags='success')
-        return HttpResponseRedirect(reverse("listing",kwargs={'id':id}))
+    else:
+        messages.error(request, "You cannot bid on your own listing", extra_tags='danger')
     return HttpResponseRedirect(reverse("listing",kwargs={'id':id}))
        
 @login_required(login_url="login")
 def add_comment(request, id):
     Listing = Auction_listing.objects.get(pk=id)
     user = User.objects.get(username=request.user.username)
-    in_Comments = Comments.objects.all().filter(user_id=user, al_id=Listing)
-    if request.method == "POST":
-        if in_Comments:
+    if Listing.is_user_valid(user) and request.method == "POST":
+        if Listing.is_comment_valid(user):
             messages.error(request, "You have already placed a Comment", extra_tags='danger')
             return HttpResponseRedirect(reverse("listing",kwargs={'id':id}))
         form = listingComment(request.POST)
@@ -212,7 +205,8 @@ def add_comment(request, id):
             listing_comment = Comments(user_id=user, al_id=Listing, comment_title=title, comment=comment)
             listing_comment.save()
             messages.error(request, "Comment Added", extra_tags='success')
-            return HttpResponseRedirect(reverse("listing",kwargs={'id':id}))
+    else:
+        messages.error(request, "You cannot comment on your own listing", extra_tags='danger')
     return HttpResponseRedirect(reverse("listing",kwargs={'id':id}))
 
 def categories(request):
@@ -234,13 +228,16 @@ def categories(request):
 
 def close_listing(request, id):
     Listing = Auction_listing.objects.get(pk=id)
-    Listing.is_active = False
-    Listing.sold_on = date.today()
-    if Listing.max_bid:
-        maxBidder = Bids.objects.all().filter(al_id=Listing, bid=Listing.max_bid).first()
-        Listing.sold_to = maxBidder.user_id.username
-    Listing.save()
-    messages.error(request, "Listing Closed Successfully" , extra_tags='success')
+    if Listing.owner() == request.user:
+        Listing.is_active = False
+        Listing.sold_on = date.today()
+        if Listing.max_bid:
+            maxBidder = Bids.objects.all().filter(al_id=Listing, bid=Listing.max_bid).first()
+            Listing.sold_to = maxBidder.user_id.username
+        Listing.save()
+        messages.error(request, "Listing Closed Successfully" , extra_tags='success')
+    else:
+        messages.error(request, "You dont own the listing" , extra_tags='success')
     return HttpResponseRedirect(reverse("listing",kwargs={'id':id}))
 
 @login_required(login_url="login")
