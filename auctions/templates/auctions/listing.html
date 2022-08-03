@@ -173,7 +173,7 @@
         {% ifequal user Listing.user_id %}
         {% else %}
             <div class="col-md-6">
-                <div class="card p-4 mr-5 shadow">
+                <div class="card p-4 shadow">
                     <h5 class="card-title font-weight-bold">WRITE A COMMENT</h5>
                     <form action="{% url 'add_comment' Listing.id %}" method="POST">
                         {% csrf_token %}
